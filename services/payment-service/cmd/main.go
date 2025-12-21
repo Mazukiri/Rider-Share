@@ -23,7 +23,7 @@ func main() {
 	tracerCfg := tracing.Config{
 		ServiceName: "payment-service",
 		Environment: env.GetString("ENVIRONMENT", "development"),
-		JaegerEndpoint: env.GetString("JAEGER_ENDPOINT", "http://jaeger:14468/api/traces"),
+		JaegerEndpoint: env.GetString("JAEGER_ENDPOINT", "http://jaeger:14368/api/traces"),
 	}
 
 	sh, err := tracing.InitTracer(tracerCfg)
@@ -44,7 +44,7 @@ func main() {
 		cancel()
 	}()
 
-	appURL := env.GetString("APP_URL", "http://localhost:8000")
+	appURL := env.GetString("APP_URL", "http://localhost:3000")
 
 	// Stripe config
 	stripeCfg := &types.PaymentConfig{
