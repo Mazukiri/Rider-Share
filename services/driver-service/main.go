@@ -58,5 +58,28 @@ func main() {
 
 	log.Println("Starting RabbitMQ connection")
 
-		
+	// Starting the gRPC server
+	grpcServer := grpcserver.NewServer(tracing.WithTracingInterceptors()...)
+	NewGrpcHandler(grpcServer, svc)
+
+	consumer := NewTripConsumer(rabbitmq, svc)
+	go func() {
+		if err := consumer.Listen(); err != nil {
+			log.Fatalf("Failed to listen to the message: %v", err)
+		}
+	}()
+
+	log.Printf("Starting gRPC server Driver service on port %s", lis.Addr().String())
+
+	go func() {
+		if err := grpcServer.Serve(lis); err != nil {
+			log.Printf("failed to serve: %v", err)
+			cancel()
+		}
+	}()
+
+	// wait for the shutdown signal
+	<-ctx.Done()
+	log.Println("Shutting down the server...")
+	grpcServer.GracefulStop()
 }
