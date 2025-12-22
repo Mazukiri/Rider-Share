@@ -58,5 +58,5 @@ func main() {
 
 	log.Println("Starting RabbitMQ connection")
 
-	
+		
 }
