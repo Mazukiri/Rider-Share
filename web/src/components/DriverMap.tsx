@@ -125,4 +125,66 @@ export const DriverMap = ({ packageSlug }: { packageSlug: CarPackageSlug }) => {
   if (error) {
     return <div>Error: {error}</div>
   }
+
+  return (
+    <div className="relative flex flex-col md:flex-row h-screen">
+      <div className="flex-1">
+        <MapContainer
+          center={[riderLocation.latitude, riderLocation.longitude]}
+          zoom={13}
+          style={{ height: '100%', width: '100%' }}
+          ref={mapRef}
+        >
+          <TileLayer
+            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+            attribution="&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors &copy; <a href='https://carto.com/'>CARTO</a>"
+          />
+
+          <Marker
+            key={userID}
+            position={[riderLocation.latitude, riderLocation.longitude]}
+            icon={driverMarker}
+          >
+            <Popup>
+              Driver ID: {userID}
+              <br />
+              Geohash: {driverGeohash}
+            </Popup>
+          </Marker>
+
+          {startLocation && (
+            <Marker position={[startLocation.longitude, startLocation.latitude]} icon={startLocationMarker}>
+              <Popup>Start Location</Popup>
+            </Marker>
+          )}
+
+          {destination && (
+            <Marker position={[destination.longitude, destination.latitude]} icon={destinationMarker}>
+              <Popup>Destination</Popup>
+            </Marker>
+          )}
+
+          {parsedRoute && (
+            <RoutingControl route={parsedRoute} />
+          )}
+
+          <MapClickHandler onClick={handleMapClick} />
+        </MapContainer>
+      </div>
+
+      <div className="flex flex-col md:w-[400px] bg-white border-t md:border-t-0 md:border-l">
+        <div className="p-4 border-b">
+          <DriverCard driver={driver} packageSlug={packageSlug} />
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          <DriverTripOverview
+            trip={requestedTrip}
+            status={tripStatus}
+            onAcceptTrip={handleAcceptTrip}
+            onDeclineTrip={handleDeclineTrip}
+          />
+        </div>
+      </div>
+    </div>
+  )
 }
