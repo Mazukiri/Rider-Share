@@ -13,4 +13,3 @@ type Service interface {
 type PaymentProcessor interface {
 	CreatePaymentSession(ctx context.Context, amount int64, currency string, metadata map[string]string) (string, error)
 }
- 
