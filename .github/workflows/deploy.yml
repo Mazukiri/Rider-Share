@@ -1,0 +1,69 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ "main" ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 'Authenticate to Google Cloud'
+        id: 'auth'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: "${{ secrets.GCP_JSON }}"
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v3'
+        with:
+          version: '>= 363.0.0'
+      - name: "Configure Docker by GCP"
+        run: gcloud auth configure-docker "$REGION-docker.pkg.dev"
+        env:
+          REGION: ${{vars.REGION}}
+      - name: Build API Gateway
+        run: |
+          docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/ride-sharing/api-gateway:latest -f infra/production/docker/api-gateway.Dockerfile .
+          docker push $REGION-docker.pkg.dev/$PROJECT_ID/ride-sharing/api-gateway:latest
+        env:
+          REGION: ${{vars.REGION}}
+          PROJECT_ID: ${{vars.PROJECT_ID}}
+      - name: Build Driver Service
+        run: |
+          docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/ride-sharing/driver-service:latest -f infra/production/docker/driver-service.Dockerfile .
+          docker push $REGION-docker.pkg.dev/$PROJECT_ID/ride-sharing/driver-service:latest
+        env:
+          REGION: ${{vars.REGION}}
+          PROJECT_ID: ${{vars.PROJECT_ID}}
+      - name: Build Trip Service
+        run: |
+          docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/ride-sharing/trip-service:latest -f infra/production/docker/trip-service.Dockerfile .
+          docker push $REGION-docker.pkg.dev/$PROJECT_ID/ride-sharing/trip-service:latest
+        env:
+          REGION: ${{vars.REGION}}
+          PROJECT_ID: ${{vars.PROJECT_ID}}
+      - name: Build Payment Service
+        run: |
+          docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/ride-sharing/payment-service:latest -f infra/production/docker/payment-service.Dockerfile .
+          docker push $REGION-docker.pkg.dev/$PROJECT_ID/ride-sharing/payment-service:latest
+        env:
+          REGION: ${{vars.REGION}}
+          PROJECT_ID: ${{vars.PROJECT_ID}}
+      - name: Setup before kubectl
+        run: |
+          gcloud components install gke-gcloud-auth-plugin
+          gcloud container clusters get-credentials ride-sharing-cluster --zone $REGION
+        env:
+          REGION: ${{vars.REGION}}
+      - name: Deploy basic infra
+        run: |
+          kubectl apply -f infra/production/k8s/app-config.yaml
+          kubectl apply -f infra/production/k8s/rabbitmq-deployment.yaml
+          kubectl apply -f infra/production/k8s/jaeger-deployment.yaml
+          kubectl apply -f infra/production/k8s/mongodb-deployment.yaml
+          kubectl apply -f infra/production/k8s/api-gateway-deployment.yaml
+          kubectl apply -f infra/production/k8s/driver-service-deployment.yaml
+          kubectl apply -f infra/production/k8s/trip-service-deployment.yaml
+          kubectl apply -f infra/production/k8s/payment-service-deployment.yaml
+          kubectl apply -f infra/production/k8s/web-deployment-deployment.yaml
+          kubectl get services
