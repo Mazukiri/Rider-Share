@@ -20,41 +20,41 @@ jobs:
       - name: "Configure Docker by GCP"
         run: gcloud auth configure-docker "$REGION-docker.pkg.dev"
         env:
-          REGION: ${{vars.REGION}}
+          REGION: ${{secrets.REGION}}
       - name: Build API Gateway
         run: |
           docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/ride-sharing/api-gateway:latest -f infra/production/docker/api-gateway.Dockerfile .
           docker push $REGION-docker.pkg.dev/$PROJECT_ID/ride-sharing/api-gateway:latest
         env:
-          REGION: ${{vars.REGION}}
-          PROJECT_ID: ${{vars.PROJECT_ID}}
+          REGION: ${{secrets.REGION}}
+          PROJECT_ID: ${{secrets.PROJECT_ID}}
       - name: Build Driver Service
         run: |
           docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/ride-sharing/driver-service:latest -f infra/production/docker/driver-service.Dockerfile .
           docker push $REGION-docker.pkg.dev/$PROJECT_ID/ride-sharing/driver-service:latest
         env:
-          REGION: ${{vars.REGION}}
-          PROJECT_ID: ${{vars.PROJECT_ID}}
+          REGION: ${{secrets.REGION}}
+          PROJECT_ID: ${{secrets.PROJECT_ID}}
       - name: Build Trip Service
         run: |
           docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/ride-sharing/trip-service:latest -f infra/production/docker/trip-service.Dockerfile .
           docker push $REGION-docker.pkg.dev/$PROJECT_ID/ride-sharing/trip-service:latest
         env:
-          REGION: ${{vars.REGION}}
-          PROJECT_ID: ${{vars.PROJECT_ID}}
+          REGION: ${{secrets.REGION}}
+          PROJECT_ID: ${{secrets.PROJECT_ID}}
       - name: Build Payment Service
         run: |
           docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/ride-sharing/payment-service:latest -f infra/production/docker/payment-service.Dockerfile .
           docker push $REGION-docker.pkg.dev/$PROJECT_ID/ride-sharing/payment-service:latest
         env:
-          REGION: ${{vars.REGION}}
-          PROJECT_ID: ${{vars.PROJECT_ID}}
+          REGION: ${{secrets.REGION}}
+          PROJECT_ID: ${{secrets.PROJECT_ID}}
       - name: Setup before kubectl
         run: |
           gcloud components install gke-gcloud-auth-plugin
           gcloud container clusters get-credentials ride-sharing-cluster --zone $REGION
         env:
-          REGION: ${{vars.REGION}}
+          REGION: ${{secrets.REGION}}
       - name: Deploy basic infra
         run: |
           kubectl apply -f infra/production/k8s/app-config.yaml
