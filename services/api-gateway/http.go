@@ -27,7 +27,7 @@ func handleTripStart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	defer r.Body.Close() 
+	defer r.Body.Close()
 
 	// Why we need to create a new client for each connection:
 	// because if a service is down, we don't want to block the whole application

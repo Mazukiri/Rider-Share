@@ -20,6 +20,7 @@ const (
 	DriverCmdTripDecline = "driver.cmd.trip_decline"
 	DriverCmdLocation    = "driver.cmd.location"
 	DriverCmdRegister    = "driver.cmd.register"
+	DriverCmdTripComplete = "driver.cmd.trip_complete"
 
 	// Payment events (payment.event.*)
 	PaymentEventSessionCreated = "payment.event.session_created"

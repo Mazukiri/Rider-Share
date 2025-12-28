@@ -35,7 +35,7 @@ func NewTripServiceClient() (*tripServiceClient, error) {
 	return &tripServiceClient{
 		Client: client,
 		conn:   conn,
-	}, nil 
+	}, nil
 }
 
 func (c *tripServiceClient) Close() {

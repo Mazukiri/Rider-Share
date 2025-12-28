@@ -38,6 +38,7 @@ func handleRidersWebSocket(w http.ResponseWriter, r *http.Request, rb *messaging
 		messaging.NotifyDriverNoDriversFoundQueue,
 		messaging.NotifyDriverAssignQueue,
 		messaging.NotifyPaymentSessionCreatedQueue,
+		messaging.NotifyDriverLocationQueue,
 	}
 
 	for _, q := range queues {
@@ -155,8 +156,21 @@ func handleDriversWebSocket(w http.ResponseWriter, r *http.Request, rb *messagin
 		// Handle the different message type
 		switch driverMsg.Type {
 		case contracts.DriverCmdLocation:
-			// Handle driver location update in the future
-			continue
+			// Forward location update to RabbitMQ
+			if err := rb.PublishMessage(ctx, driverMsg.Type, contracts.AmqpMessage{
+				OwnerID: userID,
+				Data:    driverMsg.Data,
+			}); err != nil {
+				log.Printf("Error publishing message to RabbitMQ: %v", err)
+			}
+		case contracts.DriverCmdTripComplete:
+			// Trigger trip completion in Trip Service (which will then trigger payment)
+			if err := rb.PublishMessage(ctx, contracts.DriverCmdTripComplete, contracts.AmqpMessage{
+				OwnerID: userID,
+				Data:    driverMsg.Data,
+			}); err != nil {
+				log.Printf("Error publishing trip complete message to RabbitMQ: %v", err)
+			}
 		case contracts.DriverCmdTripAccept, contracts.DriverCmdTripDecline:
 			// Forward the message to RabbitMQ
 			if err := rb.PublishMessage(ctx, driverMsg.Type, contracts.AmqpMessage{
@@ -169,4 +183,4 @@ func handleDriversWebSocket(w http.ResponseWriter, r *http.Request, rb *messagin
 			log.Printf("Unknown message type: %s", driverMsg.Type)
 		}
 	}
-} 
+}

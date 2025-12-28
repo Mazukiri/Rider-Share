@@ -19,6 +19,7 @@ export enum TripEvents {
   DriverTripAccept = "driver.cmd.trip_accept",
   DriverTripDecline = "driver.cmd.trip_decline",
   DriverRegister = "driver.cmd.register",
+  DriverTripComplete = "driver.cmd.trip_complete",
   PaymentSessionCreated = "payment.event.session_created",
 }
 
@@ -76,7 +77,7 @@ interface DriverLocationRequest {
 }
 
 interface DriverResponseToTripResponse {
-  type: TripEvents.DriverTripAccept | TripEvents.DriverTripDecline;
+  type: TripEvents.DriverTripAccept | TripEvents.DriverTripDecline | TripEvents.DriverTripComplete;
   data: {
     tripID: string;
     riderID: string;

@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
     domains: ['randomuser.me'],
   },
   reactStrictMode: false,
+  output: 'standalone',
 };
 
 export default nextConfig;

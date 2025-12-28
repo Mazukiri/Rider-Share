@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { useRiderStreamConnection } from '../hooks/useRiderStreamConnection';
+import { generateUUID } from '../utils/uuid';
 import { MapContainer, Marker, Popup, Rectangle, TileLayer } from 'react-leaflet'
 import L from 'leaflet';
 import { getGeohashBounds } from '../utils/geohash';
@@ -35,7 +36,7 @@ export default function RiderMap({ onRouteSelected }: RiderMapProps) {
     const [selectedCarPackage] = useState<RouteFare | null>(null)
     const [destination, setDestination] = useState<[number, number] | null>(null)
     const mapRef = useRef<L.Map>(null)
-    const userID = useMemo(() => crypto.randomUUID(), [])
+    const userID = useMemo(() => generateUUID(), [])
     const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const location = {
@@ -66,25 +67,31 @@ export default function RiderMap({ onRouteSelected }: RiderMapProps) {
         debounceTimeoutRef.current = setTimeout(async () => {
             setDestination([e.latlng.lat, e.latlng.lng])
 
-            const data = await requestRidePreview({
-                pickup: [location.latitude, location.longitude],
-                destination: [e.latlng.lat, e.latlng.lng],
-            })
-            console.log(data)
+            try {
+                const data = await requestRidePreview({
+                    pickup: [location.latitude, location.longitude],
+                    destination: [e.latlng.lat, e.latlng.lng],
+                })
+                console.log(data)
 
-            const parsedRoute = data.route.geometry[0].coordinates
-                .map((coord) => [coord.longitude, coord.latitude] as [number, number])
+                const parsedRoute = data.route.geometry[0].coordinates
+                    .map((coord) => [coord.longitude, coord.latitude] as [number, number])
 
-            setTrip({
-                tripID: "",
-                route: parsedRoute,
-                rideFares: data.rideFares,
-                distance: data.route.distance,
-                duration: data.route.duration,
-            })
+                setTrip({
+                    tripID: "",
+                    route: parsedRoute,
+                    rideFares: data.rideFares,
+                    distance: data.route.distance,
+                    duration: data.route.duration,
+                })
 
-            // Call onRouteSelected with the route distance
-            onRouteSelected?.(data.route.distance)
+                // Call onRouteSelected with the route distance
+                onRouteSelected?.(data.route.distance)
+            } catch (err) {
+                console.error("Failed to preview trip:", err);
+                const errorMessage = err instanceof Error ? err.message : "Unknown error";
+                alert(`Could not calculate trip route. Error: ${errorMessage}`);
+            }
         }, 500);
     }
 

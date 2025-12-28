@@ -48,8 +48,14 @@ func (c *driverConsumer) Listen() error {
 				return err
 			}
 		case contracts.DriverCmdTripDecline:
-			if err := c.handleTripDeclined(ctx, payload.TripID, payload.RiderID); err != nil {
+			if err := c.handleTripDeclined(ctx, payload.TripID, payload.RiderID, payload.Driver.Id); err != nil {
 				log.Printf("Failed to handle the trip decline: %v", err)
+				return err
+			}
+			return nil
+		case contracts.DriverCmdTripComplete:
+			if err := c.handleTripCompleted(ctx, payload.TripID, payload.RiderID, payload.Driver.Id); err != nil {
+				log.Printf("Failed to handle the trip complete: %v", err)
 				return err
 			}
 			return nil
@@ -60,16 +66,25 @@ func (c *driverConsumer) Listen() error {
 	})
 }
 
-func (c *driverConsumer) handleTripDeclined(ctx context.Context, tripID, riderID string) error {
-	// When a driver declines, we should try to find another driver
-
+func (c *driverConsumer) handleTripDeclined(ctx context.Context, tripID, riderID, driverID string) error {
+	// 1. Get current trip to see previous declines
 	trip, err := c.service.GetTripByID(ctx, tripID)
 	if err != nil {
 		return err
 	}
 
+	// 2. Add this driver to the declined list
+	newDeclinedList := append(trip.CandidateDriverIDs, driverID)
+
+	// 3. Update DB
+	if err := c.service.AddCandidateDrivers(ctx, tripID, newDeclinedList); err != nil {
+		return err
+	}
+
+	// 4. Publish "Driver Not Interested" event with the UPDATED list of excluded drivers
 	newPayload := messaging.TripEventData{
-		Trip: trip.ToProto(),
+		Trip:              trip.ToProto(),
+		DeclinedDriverIDs: newDeclinedList,
 	}
 
 	marshalledPayload, err := json.Marshal(newPayload)
@@ -100,6 +115,12 @@ func (c *driverConsumer) handleTripAccepted(ctx context.Context, tripID string, 
 		return fmt.Errorf("Trip was not found %s", tripID)
 	}
 
+	// Fix Race Condition: Check if trip is already accepted
+	if trip.Status == "accepted" || trip.Driver != nil {
+		log.Printf("Trip %s already accepted by driver %s. Ignoring request from %s", tripID, trip.Driver.Id, driver.Id)
+		return nil
+	}
+
 	// 2. Update the trip
 	if err := c.service.UpdateTrip(ctx, tripID, "accepted", driver); err != nil {
 		log.Printf("Failed to update the trip: %v", err)
@@ -125,20 +146,44 @@ func (c *driverConsumer) handleTripAccepted(ctx context.Context, tripID string, 
 		return err
 	}
 
-	marshalledPayload, err := json.Marshal(messaging.PaymentTripResponseData{
-		TripID:   tripID,
-		UserID:   trip.UserID,
-		DriverID: driver.Id,
-		Amount:   trip.RideFare.TotalPriceInCents,
-		Currency: "USD",
-	})
+	// Removed premature PaymentCmdCreateSession. 
+	// Payment should be triggered only after Trip Completion via DriverCmdTripComplete (handled in API Gateway).
 
-	if err := c.rabbitmq.PublishMessage(ctx, contracts.PaymentCmdCreateSession,
-		contracts.AmqpMessage{
-			OwnerID: trip.UserID,
-			Data:    marshalledPayload,
-		},
-	); err != nil {
+	return nil
+}
+
+func (c *driverConsumer) handleTripCompleted(ctx context.Context, tripID, riderID, driverID string) error {
+	// 1. Get current trip
+	trip, err := c.service.GetTripByID(ctx, tripID)
+	if err != nil {
+		return err
+	}
+
+	if trip == nil {
+		return fmt.Errorf("Trip was not found %s", tripID)
+	}
+
+	// 2. Update the trip status
+	if err := c.service.UpdateTrip(ctx, tripID, "completed", nil); err != nil {
+		log.Printf("Failed to update the trip status to completed: %v", err)
+		return err
+	}
+
+	log.Printf("Trip %s completed by driver %s", tripID, driverID)
+
+	// 3. Trigger Payment Session Creation
+	// We need to construct the payload expected by Payment Service
+	trip.Status = "completed"
+	marshalledTrip, err := json.Marshal(trip)
+	if err != nil {
+		return err
+	}
+
+	if err := c.rabbitmq.PublishMessage(ctx, contracts.PaymentCmdCreateSession, contracts.AmqpMessage{
+		OwnerID: riderID,
+		Data:    marshalledTrip,
+	}); err != nil {
+		log.Printf("Failed to publish payment creation message: %v", err)
 		return err
 	}
 

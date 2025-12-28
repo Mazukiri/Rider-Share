@@ -14,9 +14,10 @@ import (
 type TripModel struct {
 	ID       primitive.ObjectID `bson:"_id,omitempty"`
 	UserID   string             `bson:"userID"`
-	Status   string             `bson:"status"`
-	RideFare *RideFareModel     `bson:"rideFare"`
-	Driver   *pb.TripDriver     `bson:"driver"`
+	Status             string             `bson:"status"`
+	RideFare           *RideFareModel     `bson:"rideFare"`
+	Driver             *pb.TripDriver     `bson:"driver"`
+	CandidateDriverIDs []string           `bson:"candidateDriverIDs"`
 }
 
 func (t *TripModel) ToProto() *pb.Trip {
@@ -36,6 +37,8 @@ type TripRepository interface {
 	GetRideFareByID(ctx context.Context, id string) (*RideFareModel, error)
 	GetTripByID(ctx context.Context, id string) (*TripModel, error)
 	UpdateTrip(ctx context.Context, tripID string, status string, driver *pbd.Driver) error
+	RemoveCandidateDriver(ctx context.Context, tripID, driverID string) error
+	AddCandidateDrivers(ctx context.Context, tripID string, driverIDs []string) error
 }
 
 type TripService interface {
@@ -51,4 +54,6 @@ type TripService interface {
 	GetAndValidateFare(ctx context.Context, fareID, userID string) (*RideFareModel, error)
 	GetTripByID(ctx context.Context, id string) (*TripModel, error)
 	UpdateTrip(ctx context.Context, tripID string, status string, driver *pbd.Driver) error
+	RemoveCandidateDriver(ctx context.Context, tripID, driverID string) error
+	AddCandidateDrivers(ctx context.Context, tripID string, driverIDs []string) error
 }

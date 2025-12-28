@@ -95,4 +95,3 @@ func (c *TripConsumer) handleTripAccepted(ctx context.Context, payload messaging
 	log.Printf("Published payment session created event for trip: %s", payload.TripID)
 	return nil
 }
- 

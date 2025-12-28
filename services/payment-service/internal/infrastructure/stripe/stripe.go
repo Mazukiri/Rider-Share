@@ -49,4 +49,3 @@ func (s *stripeClient) CreatePaymentSession(ctx context.Context, amount int64, c
 
 	return result.ID, nil
 }
- 

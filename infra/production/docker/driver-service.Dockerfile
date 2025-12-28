@@ -8,4 +8,4 @@ FROM alpine:latest
 RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 COPY --from=builder /app/services/driver-service/driver-service .
-CMD ["./driver-service"] `
+CMD ["./driver-service"] 

@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"ride-sharing/services/trip-service/internal/domain"
+	"ride-sharing/shared/env"
 	"ride-sharing/shared/types"
 )
 
@@ -28,7 +29,8 @@ func (s *HttpHandler) HandleTripPreview(w http.ResponseWriter, r *http.Request) 
 	ctx := r.Context()
 
 	// CHANGE THE LAST ARG TO "FALSE" if the OSRM API is not working right now
-	t, err := s.Service.GetRoute(ctx, &reqBody.Pickup, &reqBody.Destination, true)
+	useOSRM := env.GetBool("USE_OSRM_API", true)
+	t, err := s.Service.GetRoute(ctx, &reqBody.Pickup, &reqBody.Destination, useOSRM)
 	if err != nil {
 		log.Println(err)
 	}

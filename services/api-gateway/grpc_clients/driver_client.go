@@ -43,5 +43,5 @@ func (c *driverServiceClient) Close() {
 		if err := c.conn.Close(); err != nil {
 			return
 		}
-	} 
+	}
 }

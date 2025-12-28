@@ -53,7 +53,25 @@ func (c *tripConsumer) Listen() error {
 func (c *tripConsumer) handleFindAndNotifyDrivers(ctx context.Context, payload messaging.TripEventData) error {
 	suitableIDs := c.service.FindAvailableDrivers(payload.Trip.SelectedFare.PackageSlug)
 
-	log.Printf("Found suitable drivers %v", len(suitableIDs))
+	// Filter out drivers who have already declined
+	if len(payload.DeclinedDriverIDs) > 0 {
+		filteredIDs := []string{}
+		for _, id := range suitableIDs {
+			declined := false
+			for _, declinedID := range payload.DeclinedDriverIDs {
+				if id == declinedID {
+					declined = true
+					break
+				}
+			}
+			if !declined {
+				filteredIDs = append(filteredIDs, id)
+			}
+		}
+		suitableIDs = filteredIDs
+	}
+
+	log.Printf("Found suitable drivers %v (after filtering declined: %v)", len(suitableIDs), payload.DeclinedDriverIDs)
 
 	if len(suitableIDs) == 0 {
 		// Notify the driver that no drivers are available

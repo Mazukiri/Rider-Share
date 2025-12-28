@@ -5,15 +5,16 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
-	"se2025-17.2/services/payment-service/internal/events"
-	"se2025-17.2/services/payment-service/internal/infrastructure/stripe"
-	"se2025-17.2/services/payment-service/internal/service"
-	"se2025-17.2/services/payment-service/pkg/types"
-	"se2025-17.2/shared/env"
-	"se2025-17.2/shared/messaging"
-	"se2025-17.2/shared/tracing"
+	"ride-sharing/services/payment-service/internal/events"
+	"ride-sharing/services/payment-service/internal/infrastructure/stripe"
+	"ride-sharing/services/payment-service/internal/service"
+	"ride-sharing/services/payment-service/pkg/types"
+	"ride-sharing/shared/env"
+	"ride-sharing/shared/messaging"
+	"ride-sharing/shared/tracing"
 )
 
 var GrpcAddr = env.GetString("GRPC_ADDR", ":9004")
@@ -21,9 +22,9 @@ var GrpcAddr = env.GetString("GRPC_ADDR", ":9004")
 func main() {
 	// Initialize Tracing
 	tracerCfg := tracing.Config{
-		ServiceName:    "payment-service",
-		Environment:    env.GetString("ENVIRONMENT", "development"),
-		JaegerEndpoint: env.GetString("JAEGER_ENDPOINT", "http://jaeger:14368/api/traces"),
+		ServiceName: "payment-service",
+		Environment: env.GetString("ENVIRONMENT", "development"),
+		JaegerEndpoint: env.GetString("JAEGER_ENDPOINT", "http://jaeger:14268/api/traces"),
 	}
 
 	sh, err := tracing.InitTracer(tracerCfg)
@@ -34,7 +35,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	defer sh(ctx)
-
+	
 	rabbitMqURI := env.GetString("RABBITMQ_URI", "amqp://guest:guest@rabbitmq:5672/")
 
 	// Setup graceful shutdown
@@ -49,7 +50,7 @@ func main() {
 
 	// Stripe config
 	stripeCfg := &types.PaymentConfig{
-		StripeSecretKey: env.GetString("STRIPE_SECRET_KEY", ""),
+		StripeSecretKey: strings.TrimSpace(env.GetString("STRIPE_SECRET_KEY", "")),
 		SuccessURL:      env.GetString("STRIPE_SUCCESS_URL", appURL+"?payment=success"),
 		CancelURL:       env.GetString("STRIPE_CANCEL_URL", appURL+"?payment=cancel"),
 	}

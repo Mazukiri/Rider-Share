@@ -16,4 +16,4 @@ func enableCORS(handler http.HandlerFunc) http.HandlerFunc {
 
 		handler(w, r)
 	}
-} 
+}

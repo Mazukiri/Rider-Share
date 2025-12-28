@@ -1,6 +1,7 @@
 "use client"
 
 import { useDriverStreamConnection } from "../hooks/useDriverStreamConnection"
+import { generateUUID } from '../utils/uuid';
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet'
 import L from 'leaflet';
 import { MapClickHandler } from './MapClickHandler';
@@ -38,7 +39,7 @@ const destinationMarker = new L.Icon({
 
 export const DriverMap = ({ packageSlug }: { packageSlug: CarPackageSlug }) => {
   const mapRef = useRef<L.Map>(null)
-  const userID = useMemo(() => crypto.randomUUID(), [])
+  const userID = useMemo(() => generateUUID(), [])
   const [riderLocation, setRiderLocation] = useState<Coordinate>(START_LOCATION)
 
   const driverGeohash = useMemo(() =>
@@ -103,6 +104,30 @@ export const DriverMap = ({ packageSlug }: { packageSlug: CarPackageSlug }) => {
 
     setTripStatus(TripEvents.DriverTripDecline)
     resetTripStatus()
+  }
+
+  const handleCompleteTrip = () => {
+    if (!requestedTrip || !requestedTrip.id || !driver) {
+      alert("No trip ID found or driver is not set")
+      return
+    }
+
+    sendMessage({
+      type: TripEvents.DriverTripComplete,
+      data: {
+        tripID: requestedTrip.id,
+        riderID: requestedTrip.userID,
+        driver: driver,
+      }
+    })
+
+    alert("Trip Completed! Returning to home page.")
+    // Reset state and return to initial view logic (or redirect)
+    // Since this is a single page app view, resetting state might be enough to show "Waiting for rider"
+    // But user asked "Return to home page". Since we are on /driver page, maybe they mean force refresh or just reset.
+    // Let's reset the status to null so it shows "Waiting for rider..." which is the "Home state" of the Driver Page.
+    resetTripStatus()
+    window.location.reload() // Force reload to be safe and clean state as requested "Trang đầu"
   }
 
   console.log({ requestedTrip })
@@ -182,6 +207,7 @@ export const DriverMap = ({ packageSlug }: { packageSlug: CarPackageSlug }) => {
             status={tripStatus}
             onAcceptTrip={handleAcceptTrip}
             onDeclineTrip={handleDeclineTrip}
+            onCompleteTrip={handleCompleteTrip}
           />
         </div>
       </div>

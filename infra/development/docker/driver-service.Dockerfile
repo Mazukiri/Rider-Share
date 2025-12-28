@@ -1,5 +1,7 @@
-set CGO_ENABLED=0
-set GOOS=linux
-set GOARCH=amd64
-go build -o build/driver-service ./services/driver-service
+FROM alpine
+WORKDIR /app
 
+ADD shared shared
+ADD build build
+
+ENTRYPOINT build/driver-service

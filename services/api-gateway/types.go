@@ -35,4 +35,4 @@ func (c *startTripRequest) toProto() *pb.CreateTripRequest {
 		RideFareID: c.RideFareID,
 		UserID:     c.UserID,
 	}
-} 
+}

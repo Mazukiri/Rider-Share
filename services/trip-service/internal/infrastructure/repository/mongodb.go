@@ -106,3 +106,27 @@ func (r *mongoRepository) GetRideFareByID(ctx context.Context, id string) (*doma
 
 	return &fare, nil
 }
+
+func (r *mongoRepository) AddCandidateDrivers(ctx context.Context, tripID string, driverIDs []string) error {
+	_id, err := primitive.ObjectIDFromHex(tripID)
+	if err != nil {
+		return err
+	}
+
+	update := bson.M{"$set": bson.M{"candidateDriverIDs": driverIDs}}
+
+	_, err = r.db.Collection(db.TripsCollection).UpdateOne(ctx, bson.M{"_id": _id}, update)
+	return err
+}
+
+func (r *mongoRepository) RemoveCandidateDriver(ctx context.Context, tripID, driverID string) error {
+	_id, err := primitive.ObjectIDFromHex(tripID)
+	if err != nil {
+		return err
+	}
+
+	update := bson.M{"$pull": bson.M{"candidateDriverIDs": driverID}}
+
+	_, err = r.db.Collection(db.TripsCollection).UpdateOne(ctx, bson.M{"_id": _id}, update)
+	return err
+}

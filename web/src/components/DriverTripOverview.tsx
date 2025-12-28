@@ -7,10 +7,11 @@ interface DriverTripOverviewProps {
   trip?: Trip | null,
   status?: TripEvents | null,
   onAcceptTrip?: () => void,
-  onDeclineTrip?: () => void
+  onDeclineTrip?: () => void,
+  onCompleteTrip?: () => void
 }
 
-export const DriverTripOverview = ({ trip, status, onAcceptTrip, onDeclineTrip }: DriverTripOverviewProps) => {
+export const DriverTripOverview = ({ trip, status, onAcceptTrip, onDeclineTrip, onCompleteTrip }: DriverTripOverviewProps) => {
   if (!trip) {
     return (
       <TripOverviewCard
@@ -38,7 +39,7 @@ export const DriverTripOverview = ({ trip, status, onAcceptTrip, onDeclineTrip }
     return (
       <TripOverviewCard
         title="All set!"
-        description="You can now start the trip"
+        description="You have accepted the trip. Pick up the passenger and drive to the destination."
       >
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
@@ -49,6 +50,7 @@ export const DriverTripOverview = ({ trip, status, onAcceptTrip, onDeclineTrip }
               Rider ID: {trip.userID}
             </p>
           </div>
+          <Button onClick={onCompleteTrip}>Complete Trip</Button>
         </div>
       </TripOverviewCard>
     )
