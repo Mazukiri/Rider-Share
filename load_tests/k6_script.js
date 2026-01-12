@@ -6,10 +6,10 @@ import { htmlReport } from "https://raw.githubusercontent.com/benc-uk/k6-reporte
 // Giống như video mô tả: Tăng số user từ từ để tìm điểm chết (Breaking Point)
 export const options = {
   stages: [
-    { duration: '30s', target: 20 },  // Giai đoạn 1: Warm up (20 users)
-    { duration: '1m',  target: 100 }, // Giai đoạn 2: Tải cao (100 users - High Load)
-    { duration: '30s', target: 200 }, // Giai đoạn 3: Stress Test (200 users - Cực hạn)
-    { duration: '30s', target: 0 },   // Giai đoạn 4: Cool down
+    { duration: '30s', target: 50 },   // Warm up
+    { duration: '1m',  target: 500 },  // Maintain high load
+    { duration: '30s', target: 1000 }, // Stress test (targeting ~5000 RPS)
+    { duration: '30s', target: 0 },    // Cooldown
   ],
   thresholds: {
     http_req_duration: ['p(95)<500', 'p(99)<1000'], // SLA: 99% request phải dưới 1s
@@ -57,5 +57,6 @@ export default function () {
 
   // Nghỉ giữa các request (Think Time) - Giả lập hành vi người thật
   // Random từ 0.5s đến 1.5s
-  sleep(Math.random() * 1 + 0.5);
+  // Removed sleep to maximize RPS for stress testing claims
+  // sleep(Math.random() * 0.1); 
 }

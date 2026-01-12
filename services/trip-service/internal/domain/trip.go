@@ -39,6 +39,9 @@ type TripRepository interface {
 	UpdateTrip(ctx context.Context, tripID string, status string, driver *pbd.Driver) error
 	RemoveCandidateDriver(ctx context.Context, tripID, driverID string) error
 	AddCandidateDrivers(ctx context.Context, tripID string, driverIDs []string) error
+	
+	// Outbox Pattern
+	SaveOutboxEvent(ctx context.Context, eventType string, payload interface{}) error
 }
 
 type TripService interface {

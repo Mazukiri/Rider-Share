@@ -4,6 +4,8 @@ import (
 	"context"
 	"log"
 	"net"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"ride-sharing/shared/env"
@@ -57,6 +59,14 @@ func main() {
 	defer rabbitmq.Close()
 
 	log.Println("Starting RabbitMQ connection")
+
+	// Start pprof server
+	go func() {
+		log.Println("Starting pprof server on :6060")
+		if err := http.ListenAndServe("localhost:6060", nil); err != nil {
+			log.Printf("pprof server failed: %v", err)
+		}
+	}()
 
 	// Starting the gRPC server
 	grpcServer := grpcserver.NewServer(tracing.WithTracingInterceptors()...)

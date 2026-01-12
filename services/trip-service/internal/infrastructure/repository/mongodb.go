@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"ride-sharing/services/trip-service/internal/domain"
 	"ride-sharing/shared/db"
@@ -12,6 +13,14 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
+
+type OutboxEvent struct {
+	ID        primitive.ObjectID `bson:"_id,omitempty"`
+	EventType string             `bson:"eventType"`
+	Payload   interface{}        `bson:"payload"`
+	CreatedAt primitive.DateTime `bson:"createdAt"`
+	Processed bool               `bson:"processed"`
+}
 
 type mongoRepository struct {
 	db *mongo.Database
@@ -128,5 +137,18 @@ func (r *mongoRepository) RemoveCandidateDriver(ctx context.Context, tripID, dri
 	update := bson.M{"$pull": bson.M{"candidateDriverIDs": driverID}}
 
 	_, err = r.db.Collection(db.TripsCollection).UpdateOne(ctx, bson.M{"_id": _id}, update)
+	return err
+}
+
+func (r *mongoRepository) SaveOutboxEvent(ctx context.Context, eventType string, payload interface{}) error {
+	event := &OutboxEvent{
+		ID:        primitive.NewObjectID(),
+		EventType: eventType,
+		Payload:   payload,
+		Processed: false,
+		CreatedAt: primitive.NewDateTimeFromTime(time.Now()),
+	}
+
+	_, err := r.db.Collection("outbox").InsertOne(ctx, event)
 	return err
 }
