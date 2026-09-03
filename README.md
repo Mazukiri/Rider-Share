@@ -4,6 +4,22 @@
 
 A high-performance, fault-tolerant microservices platform built with **Golang** and **Kubernetes**, designed to handle 5k+ concurrent ride requests. This project implements advanced distributed systems patterns like **Hexagonal Architecture**, **Saga Pattern**, and **Event-Driven Architecture**.
 
+## 👥 Team and my role
+
+Built by **four engineers**. I co-architected the service decomposition and the
+gRPC contracts between services, and I owned two pieces end to end:
+
+- **The matching engine** — the in-memory geo-hash index and its concurrency.
+  `pprof` attributed the throughput ceiling to contention on a single mutex;
+  moving to read-write locks over a sharded index lifted throughput **200%**
+  from that baseline.
+- **The load-test and profiling campaign** — the k6 scenarios and the
+  Prometheus/Grafana instrumentation that produced every number in the table
+  below.
+
+The Saga/Outbox consistency work and the payment and dispatch services were my
+teammates'. Numbers below are for the system as a whole.
+
 ## 🧪 Performance Benchmarks
 > Benchmarks run on a 3-node GKE Cluster (4 vCPU/16GB RAM) using **k6** and **Prometheus**.
 
